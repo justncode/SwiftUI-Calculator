@@ -76,15 +76,61 @@ struct EntryView: View {
                 return .white
             }
         }
+        
+        func result(from currentResult: String) -> String {
+            guard isInput else {
+                return performAction(on: currentResult)
+            }
+            
+            let result = currentResult + displayValue
+            
+            switch (result.isDouble, result.isInteger) {
+            case (false, _):
+                return currentResult
+            case (_, true):
+                return String(Int(result) ?? 0)
+            default:
+                return result
+            }
+        }
+        
+        private var isInput: Bool {
+            switch self {
+            case .integer,
+                 .dot:
+                return true
+            default:
+                return false
+            }
+        }
+        
+        private func performAction(on currentResult: String) -> String {
+            guard let doubleValue = Double(currentResult) else {
+                return currentResult
+            }
+            
+            switch self {
+            case .clear:
+                return String(Int.zero)
+            case .negative:
+                return Formatter.zeroFractionDigitsNumberFormatter.string(from: NSNumber(value: -doubleValue)) ?? currentResult
+            case .percentage:
+                return Formatter.zeroFractionDigitsNumberFormatter.string(from: NSNumber(value: doubleValue / 100)) ?? currentResult
+            default:
+                return currentResult
+            }
+        }
     }
+    
+    @Binding var result: String
     
     var body: some View {
         VStack(spacing: 0) {
-            EntryRow(entries: [.clear, .negative, .percentage, .divide])
-            EntryRow(entries: [.integer(7), .integer(8), .integer(9), .multiply])
-            EntryRow(entries: [.integer(4), .integer(5), .integer(6), .subtract])
-            EntryRow(entries: [.integer(1), .integer(2), .integer(3), .add])
-            EntryRow(entries: [.integer(0), .dot, .equals])
+            EntryRow(result: $result, entries: [.clear, .negative, .percentage, .divide])
+            EntryRow(result: $result, entries: [.integer(7), .integer(8), .integer(9), .multiply])
+            EntryRow(result: $result, entries: [.integer(4), .integer(5), .integer(6), .subtract])
+            EntryRow(result: $result, entries: [.integer(1), .integer(2), .integer(3), .add])
+            EntryRow(result: $result, entries: [.integer(0), .dot, .equals])
         }
         .padding(.bottom, 8)
     }
@@ -92,6 +138,8 @@ struct EntryView: View {
 
 private struct EntryRow: View {
     typealias Entry = EntryView.Entry
+    
+    @Binding var result: String
     
     let entries: [Entry]
     
@@ -109,7 +157,7 @@ private struct EntryRow: View {
     
     private func row(for entry: Entry, cornerRadius: CGFloat) -> some View {
         Button(action: {
-            print("Tapped", entry.displayValue)
+            self.result = entry.result(from: self.result)
         }) {
             ZStack {
                 RoundedRectangle(cornerRadius: cornerRadius)
@@ -149,5 +197,15 @@ private extension GeometryProxy {
     
     func cornerRadius(for entry: Entry) -> CGFloat {
         return height(for: entry) / 2
+    }
+}
+
+private extension String {
+    var isInteger: Bool {
+        return Int(self) != nil
+    }
+    
+    var isDouble: Bool {
+        return Double(self) != nil
     }
 }

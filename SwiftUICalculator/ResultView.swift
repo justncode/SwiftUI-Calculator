@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct ResultView: View {
+    @Binding var result: String 
+    
     let geometry: GeometryProxy
     
     var body: some View {
@@ -23,7 +25,7 @@ struct ResultView: View {
     }
     
     private var resultText: some View {
-        Text("0")
+        Text(result)
             .font(.system(size: 72))
             .fontWeight(.light)
             .foregroundColor(.white)
